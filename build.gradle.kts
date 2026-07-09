@@ -23,13 +23,13 @@ description = "spring-playground"
 // -----------------------------------------------
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(26)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_21) // Spring Boot 4 runtime target
+        jvmTarget.set(JvmTarget.JVM_25) // Spring Boot 4 runtime target
         freeCompilerArgs.addAll(
             "-Xjsr305=strict",                // null-safety via @Nullable/@NonNull
             "-Xannotation-default-target=param-property"
