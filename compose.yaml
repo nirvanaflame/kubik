@@ -1,11 +1,16 @@
 services:
   grafana-lgtm:
+    container_name: lgtm
     image: 'grafana/otel-lgtm:latest'
     ports:
-      - '3000:3000'
-      - '4317'
-      - '4318'
+      - '3000:3000' # Grafana UI
+      - '4317:4317' # OpenTelemetry GRPC endpoint
+      - '4318:4318' # OpenTelemetry HTTP endpoint
+      - '3200:3200' # Tempo endpoint (MCP at http://localhost:3200/api/mcp)
+      - '4040:4040' # Pyroscope endpoint
+      - '9090:9090' # Prometheus endpoint
   redis:
+    container_name: redis
     image: 'redis:latest'
     ports:
       - '6379:6379'

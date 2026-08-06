@@ -76,9 +76,10 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")
 
-    // --- Exporters / registries --
-    runtimeOnly("io.micrometer:micrometer-registry-otlp")
-    runtimeOnly("io.micrometer:micrometer-registry-prometheus")  // pull-based Prometheus bridge
+    implementation("io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:2.30.0-alpha")
+
+//    runtimeOnly("io.micrometer:micrometer-registry-otlp")  // micrometer ↔ OpenTelemetry bridge — writes metrics+traces over OTLP to LGTM on :4317 via gRPC
+//    runtimeOnly("io.micrometer:micrometer-registry-prometheus")   // pull-based Prometheus bridge
 
     // --- Annotation processing --
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
