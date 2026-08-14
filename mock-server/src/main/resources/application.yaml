@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: mock-server
+
+server:
+  port: 8081            # keep clear of :spring-playground (8080)
+
+logging:
+  level:
+    root: info
+    com.nf.mockserver: debug

@@ -14,3 +14,12 @@ services:
     image: 'redis:latest'
     ports:
       - '6379:6379'
+  mock-server:
+    container_name: mock-server
+    build:
+      context: .
+      dockerfile: mock-server/Dockerfile
+    ports:
+      - '8081:8081'
+    environment:
+      SERVER_PORT: 8081

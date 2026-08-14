@@ -3,6 +3,7 @@ package com.nf.springplayground.counter;
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.BaseUnits
+import net.logstash.logback.marker.RawJsonAppendingMarker
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -27,6 +28,13 @@ class MyMetricsController(val meterRegistry: MeterRegistry) {
         log.info("Increment counter: {}", counter.count())
         counter.increment()
         log.info("Incremented counter: {}", counter.count())
+
+        log.atInfo()
+            .addMarker(RawJsonAppendingMarker("what is a marker?", "{}"))
+            .addKeyValue("key", "value")
+            .addArgument("what is an argument?")
+            .log("message: {}")
+
         return "count: ${counter.count()}"
     }
 }
