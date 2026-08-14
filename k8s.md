@@ -351,3 +351,74 @@ function pf-istio { kubectl port-forward -n istio-system svc/istio-ingressgatewa
 
 Then just type `pf-istio`. Note: don't run a manual tunnel on 8080 while the task
 is active (port conflict) — `schtasks /End /TN istio-pf` first.
+
+---
+
+## 10. ArgoCD (GitOps)
+
+ArgoCD continuously syncs the kustomize overlay in this repo into the cluster.
+CLI: `argocd` v3.5.1 (scoop). Server installed from the official manifests:
+`kubectl apply --server-side -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.1/manifests/install.yaml`
+(server-side apply is required — the `applicationsets` CRD is so large that
+client-side apply's `last-applied` annotation exceeds the 256KB limit).
+
+### Prerequisite: a reachable git remote (required)
+
+ArgoCD's repo-server runs in-cluster and clones from a URL — it cannot read the
+local filesystem, and this repo currently has **no remote**. Push it somewhere:
+
+```bash
+# create the repo on GitHub first, then:
+git remote add origin https://github.com/<you>/spring-playground.git
+git push -u origin master
+```
+
+Public repo → no credentials needed. Private repo → register credentials:
+
+```bash
+argocd repo add https://github.com/<you>/spring-playground.git \
+  --username <you> --password <personal-access-token>
+```
+
+### Bootstrap the Application
+
+Edit `k8s/argocd/application.yaml` → set `spec.source.repoURL` to the real URL,
+then:
+
+```bash
+kubectl apply -k k8s/argocd
+argocd app get spring-playground      # watch status (Synced / Healthy)
+```
+
+The Application watches `k8s/overlays/dev` (the same kustomize overlay you apply
+by hand). `automated.prune` + `selfHeal` are on, so manual `kubectl` changes are
+reverted to git and deletions are mirrored.
+
+### Access the UI
+
+```bash
+# persistent tunnel (same pattern as §9, port 8090 so it doesn't clash with istio on 8080)
+powershell -NoProfile -File .\tools\pf-argocd.ps1
+# or ad-hoc:
+kubectl port-forward -n argocd svc/argocd-server 8090:443
+```
+
+- UI: https://localhost:8090  (admin / initial password below)
+- CLI login:
+  ```bash
+  argocd login localhost:8090
+  argocd account update-password   # rotate the admin password
+  ```
+- Initial admin password:
+  ```bash
+  kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+  ```
+
+### Troubleshooting
+
+- `argocd app get` shows `OutOfSync` after you change git → wait one refresh or
+  hit **Refresh** in the UI; `selfHeal` fixes drift automatically.
+- App stuck `Missing`/`InvalidSpec` → repo not registered or repoURL wrong
+  (`argocd repo list`).
+- ArgoCD version 3.5.1 matches the installed server; keep CLI and server in sync
+  (`argocd version`).

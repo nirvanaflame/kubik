@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spring-playground
+  namespace: argocd
+spec:
+  project: default
+  source:
+    # ArgoCD's repo-server can clone (e.g. GitHub). See k8s.md section 10.
+    repoURL: https://github.com/nirvanaflame/kubik.git
+    targetRevision: HEAD
+    path: k8s/overlays/dev        # kustomize overlay that renders the whole stack
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: spring-playground
+  syncPolicy:
+    automated:
+      prune: true      # delete resources removed from git
+      selfHeal: true   # revert manual cluster changes to match git
+    syncOptions:
+      - CreateNamespace=true
