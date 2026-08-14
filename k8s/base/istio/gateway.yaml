@@ -13,3 +13,4 @@ spec:
       hosts:
         - "mock.local"
         - "playground.local"
+        - "grafana.local"

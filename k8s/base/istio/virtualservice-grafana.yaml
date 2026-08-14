@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: grafana
+spec:
+  hosts:
+    - "grafana.local"
+  gateways:
+    - public-gateway
+  http:
+    - route:
+        - destination:
+            host: lgtm
+            port:
+              number: 3000

@@ -4,3 +4,4 @@ resources:
   - gateway.yaml
   - virtualservice-mock-server.yaml
   - virtualservice-spring-playground.yaml
+  - virtualservice-grafana.yaml
