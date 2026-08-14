@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spring-playground-config
+data:
+  # Override the hardcoded localhost OTLP endpoints in application.yaml:
+  # inside the pod "localhost" is the pod itself, so point at the in-cluster
+  # lgtm Service instead.
+  MANAGEMENT_OTLP_METRICS_EXPORT_URL: "http://lgtm:4318/v1/metrics"
+  MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://lgtm:4318/v1/traces"
+  MANAGEMENT_OPENTELEMETRY_LOGGING_EXPORT_OTLP_ENDPOINT: "http://lgtm:4318/v1/logs"
+
+  # The data-redis starter defaults to localhost:6379; route it to the
+  # redis Service so /actuator/health stays GREEN (probes depend on it).
+  SPRING_DATA_REDIS_HOST: "redis"

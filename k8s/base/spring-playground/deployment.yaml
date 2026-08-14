@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-playground
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-playground
+  template:
+    metadata:
+      labels:
+        app: spring-playground
+    spec:
+      containers:
+        - name: spring-playground
+          image: spring-playground        # tag pinned by kustomize `images`
+          imagePullPolicy: IfNotPresent   # local image on Docker Desktop
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: spring-playground-config
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi

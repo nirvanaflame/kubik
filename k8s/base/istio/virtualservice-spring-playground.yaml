@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: spring-playground
+spec:
+  hosts:
+    - "playground.local"
+  gateways:
+    - public-gateway
+  http:
+    - route:
+        - destination:
+            host: spring-playground
+            port:
+              number: 80

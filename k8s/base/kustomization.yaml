@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ------------------------------------------------------------------
+# Base: every manifest that describes the stack, namespace-agnostic.
+# The active namespace is decided by the overlay (see overlays/dev).
+# Image tags are pinned here via the `images` transformer so an
+# overlay can switch versions without touching the Deployment YAML.
+# ------------------------------------------------------------------
+
+resources:
+  - namespace.yaml
+  - spring-playground
+  - mock-server
+  - redis
+  - lgtm
+  - istio
+
+images:
+  - name: spring-playground
+    newTag: 0.0.1
+  - name: mock-server
+    newTag: 0.0.1
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: spring-playground
+      app.kubernetes.io/managed-by: kustomize

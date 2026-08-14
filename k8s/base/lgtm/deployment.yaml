@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lgtm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lgtm
+  template:
+    metadata:
+      labels:
+        app: lgtm
+      annotations:
+        sidecar.istio.io/inject: "false"   # observability infra: keep out of the mesh
+    spec:
+      containers:
+        - name: lgtm
+          image: grafana/otel-lgtm:latest
+          ports:
+            - containerPort: 3000   # Grafana UI
+            - containerPort: 4317   # OpenTelemetry GRPC
+            - containerPort: 4318   # OpenTelemetry HTTP
+            - containerPort: 3200   # Tempo (MCP)
+            - containerPort: 4040   # Pyroscope
+            - containerPort: 9090   # Prometheus
+          startupProbe:             # all-in-one image takes a while to come up
+            httpGet:
+              path: /
+              port: 3000
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
