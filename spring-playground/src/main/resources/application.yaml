@@ -1,6 +1,10 @@
 spring:
   application:
     name: spring-playground
+  data:
+    redis:
+      host: redis
+      port: 6379
 
 management:
   tracing:
