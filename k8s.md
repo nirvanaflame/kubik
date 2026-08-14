@@ -328,7 +328,16 @@ hidden background task that auto-starts at logon and auto-retries.
 Helper: `tools/pf-istio.ps1` (loops: start tunnel → on exit, retry after 5s; logs to
 `%TEMP%\pf-istio.log`).
 
-Register once (from PowerShell):
+**Recommended — Startup folder (no admin, already installed):**
+`tools/start-pf-istio.vbs` (and `start-pf-argocd.vbs` for the ArgoCD UI on 8090)
+launch the scripts hidden at logon. They are copied to
+`C:\Users\nf\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\`,
+so they run automatically when you log in — no scheduled task needed.
+
+Stop the tunnel: kill the `powershell.exe` process running `pf-istio.ps1`
+(Task Manager → search "pf-istio") or remove the `.vbs` from the Startup folder.
+
+**Alternative — scheduled task (requires admin):**
 
 ```powershell
 schtasks /Create /TN istio-pf /TR 'powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "C:\Users\nf\IdeaProjects\spring-playground\tools\pf-istio.ps1"' /SC ONLOGON /F

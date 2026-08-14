@@ -1,0 +1,3 @@
+' start-pf-istio.vbs — hidden launcher for pf-istio.ps1 (runs at logon via Startup folder)
+' 0 = hidden window, False = don't wait
+CreateObject("Wscript.Shell").Run "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File ""C:\Users\nf\IdeaProjects\spring-playground\tools\pf-istio.ps1""", 0, False
