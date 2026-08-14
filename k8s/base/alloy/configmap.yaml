@@ -13,10 +13,28 @@ data:
       role = "pod"
     }
 
+    // Promote the discovered meta labels into real query labels
+    // (namespace, pod, container), otherwise they are dropped at push.
+    discovery.relabel "pods" {
+      targets = discovery.kubernetes.pods.targets
+      rule {
+        source_labels = ["__meta_kubernetes_pod_namespace"]
+        target_label  = "namespace"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+      }
+    }
+
     // Tail every container's log file on this node (via /var/log/pods)
     // and forward to Loki inside the lgtm stack.
     loki.source.kubernetes "pods" {
-      targets    = discovery.kubernetes.pods.targets
+      targets    = discovery.relabel.pods.output
       forward_to = [loki.write.lgtm.receiver]
     }
 
