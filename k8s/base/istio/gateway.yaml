@@ -14,3 +14,4 @@ spec:
         - "mock.local"
         - "playground.local"
         - "grafana.local"
+        - "redis.local"

@@ -13,6 +13,7 @@ resources:
   - spring-playground
   - mock-server
   - redis
+  - redis-commander
   - lgtm
   - istio
   - alloy

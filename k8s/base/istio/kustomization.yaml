@@ -5,3 +5,4 @@ resources:
   - virtualservice-mock-server.yaml
   - virtualservice-spring-playground.yaml
   - virtualservice-grafana.yaml
+  - virtualservice-redis.yaml

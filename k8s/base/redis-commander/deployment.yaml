@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-commander
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-commander
+  template:
+    metadata:
+      labels:
+        app: redis-commander
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      containers:
+        - name: redis-commander
+          image: rediscommander/redis-commander:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REDIS_HOSTS
+              value: "local:redis:6379"
+          ports:
+            - name: http
+              containerPort: 8081
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

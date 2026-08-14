@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: redis-commander
+spec:
+  hosts:
+    - "redis.local"
+  gateways:
+    - public-gateway
+  http:
+    - route:
+        - destination:
+            host: redis-commander
+            port:
+              number: 80
