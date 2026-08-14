@@ -19,6 +19,7 @@ spec:
           image: grafana/otel-lgtm:latest
           ports:
             - containerPort: 3000   # Grafana UI
+            - containerPort: 3100   # Loki
             - containerPort: 4317   # OpenTelemetry GRPC
             - containerPort: 4318   # OpenTelemetry HTTP
             - containerPort: 3200   # Tempo (MCP)

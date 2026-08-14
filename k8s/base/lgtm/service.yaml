@@ -9,6 +9,9 @@ spec:
     - name: grafana
       port: 3000
       targetPort: 3000
+    - name: loki
+      port: 3100
+      targetPort: 3100
     - name: otlp-grpc
       port: 4317
       targetPort: 4317

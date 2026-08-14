@@ -15,6 +15,7 @@ resources:
   - redis
   - lgtm
   - istio
+  - alloy
 
 images:
   - name: spring-playground
