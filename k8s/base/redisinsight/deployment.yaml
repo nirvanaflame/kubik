@@ -1,29 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis-commander
+  name: redisinsight
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: redis-commander
+      app: redisinsight
   template:
     metadata:
       labels:
-        app: redis-commander
+        app: redisinsight
       annotations:
         sidecar.istio.io/inject: "false"
     spec:
       containers:
-        - name: redis-commander
-          image: rediscommander/redis-commander:latest
+        - name: redisinsight
+          image: redis/redisinsight:latest
           imagePullPolicy: IfNotPresent
-          env:
-            - name: REDIS_HOSTS
-              value: "local:redis:6379"
           ports:
             - name: http
-              containerPort: 8081
+              containerPort: 5540
           readinessProbe:
             httpGet:
               path: /
@@ -32,8 +29,14 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              cpu: 25m
-              memory: 64Mi
+              cpu: 50m
+              memory: 128Mi
             limits:
-              cpu: 250m
-              memory: 256Mi
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}

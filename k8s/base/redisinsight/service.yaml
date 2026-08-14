@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis-commander
+  name: redisinsight
 spec:
   selector:
-    app: redis-commander
+    app: redisinsight
   ports:
     - name: http
       port: 80

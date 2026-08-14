@@ -257,7 +257,7 @@ Docker Desktop's cluster too).
 ## 8. Istio routing (host-based)
 
 Routing layer: one `Gateway` + one `VirtualService` per app, in `k8s/base/istio/`.
-Hosts: `mock.local` → mock-server, `playground.local` → spring-playground, `grafana.local` → lgtm:3000 (Grafana), `redis.local` → redis-commander.
+Hosts: `mock.local` → mock-server, `playground.local` → spring-playground, `grafana.local` → lgtm:3000 (Grafana), `redis.local` → RedisInsight.
 redis and lgtm carry `sidecar.istio.io/inject: "false"` (pure infra, no mesh needed).
 
 ### Install (one-time, needs istioctl)
@@ -300,7 +300,7 @@ kubectl port-forward -n istio-system svc/istio-ingressgateway 8080:80
 Then browse:
 - http://mock.local:8080/           → mock-server (try /json, /anything)
 - http://playground.local:8080/     → spring-playground (try /ping, /best-offer)
-- http://redis.local:8080/          → Redis Commander (browse the `local` Redis connection)
+- http://redis.local:8080/          → RedisInsight; add `redis:6379` as the Redis connection
 
 ### Verify the mesh
 

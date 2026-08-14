@@ -1,7 +1,7 @@
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: redis-commander
+  name: redisinsight
 spec:
   hosts:
     - "redis.local"
@@ -10,6 +10,6 @@ spec:
   http:
     - route:
         - destination:
-            host: redis-commander
+            host: redisinsight
             port:
               number: 80
