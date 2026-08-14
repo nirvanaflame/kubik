@@ -469,3 +469,22 @@ label browser:
 - `pods/log is forbidden` → Alloy's ClusterRole needs `pods/log` get (it has it now).
 - Logs arrive but no labels → the `discovery.relabel` block is missing from the config.
 - Config changes need a DaemonSet restart (`kubectl -n spring-playground rollout restart daemonset/alloy`) — Alloy doesn't hot-reload.
+
+### Retention / storage cap (~2GB)
+
+Old data is deleted automatically so the LGTM stack stays under ~2GB. Implemented in
+`k8s/base/lgtm/deployment.yaml` via the image's `*_EXTRA_ARGS` env vars (appended to
+each component's command line):
+
+| Component | Setting | Effect |
+|---|---|---|
+| Prometheus | `--storage.tsdb.retention.size=1GB --storage.tsdb.retention.time=48h` | size-based: metrics pruned at 1GB (hard cap) |
+| Loki | `-compactor.retention-enabled=true -store.retention=48h -compactor.delete-request-store=filesystem` | logs deleted after 48h (Loki has no size cap) |
+| Tempo | `-compactor.compaction.compaction.block-retention=12h` | trace blocks dropped after 12h |
+| Pyroscope | `-compactor.blocks-retention-period=24h` | profile blocks dropped after 24h |
+
+Plus a hard safety net: the whole data dir is an `emptyDir` with `sizeLimit: 2Gi` —
+if retention ever fails to keep it under 2Gi, the pod is evicted and restarts empty.
+
+How to verify (inside the lgtm pod): `cat /proc/<pid>/cmdline` for each component, or
+Loki: `./loki/loki -config.file=./loki-config.yaml -verify-config <flags>`.
