@@ -17,6 +17,20 @@ spec:
       containers:
         - name: lgtm
           image: grafana/otel-lgtm:latest
+          env:
+            # Retention: old data is deleted automatically so the stack stays under ~2GB.
+            # Prometheus: size-based cap (hard) + time cap -> metrics pruned at 1GB
+            - name: PROMETHEUS_EXTRA_ARGS
+              value: "--storage.tsdb.retention.size=1GB --storage.tsdb.retention.time=48h"
+            # Loki: time-based retention (Loki has no size cap; 48h is plenty for dev)
+            - name: LOKI_EXTRA_ARGS
+              value: "-compactor.retention-enabled=true -store.retention=48h -compactor.delete-request-store=filesystem"
+            # Tempo: drop trace blocks older than 12h
+            - name: TEMPO_EXTRA_ARGS
+              value: "-compactor.compaction.compaction.block-retention=12h"
+            # Pyroscope: drop profile blocks older than 24h
+            - name: PYROSCOPE_EXTRA_ARGS
+              value: "-compactor.blocks-retention-period=24h"
           ports:
             - containerPort: 3000   # Grafana UI
             - containerPort: 3100   # Loki
@@ -36,6 +50,9 @@ spec:
               path: /
               port: 3000
             periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /data
           resources:
             requests:
               cpu: 250m
@@ -43,3 +60,10 @@ spec:
             limits:
               cpu: "2"
               memory: 2Gi
+      volumes:
+        - name: data
+          # Hard cap on the whole stack (logs/traces/metrics/profiles):
+          # if retention ever fails to keep it under 2Gi, the pod is evicted
+          # and restarts with an empty store.
+          emptyDir:
+            sizeLimit: 2Gi
