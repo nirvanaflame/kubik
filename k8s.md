@@ -488,3 +488,28 @@ if retention ever fails to keep it under 2Gi, the pod is evicted and restarts em
 
 How to verify (inside the lgtm pod): `cat /proc/<pid>/cmdline` for each component, or
 Loki: `./loki/loki -config.file=./loki-config.yaml -verify-config <flags>`.
+
+### Redis in Grafana (metrics)
+
+Redis was not visible in Grafana because nothing exported its metrics. Now:
+
+1. **redis-exporter sidecar** (`oliver006/redis_exporter:v1.89.0`) runs next to redis, exposing
+   Prometheus metrics on `:9121` (`REDIS_ADDR=redis://localhost:6379`).
+2. **redis Service** exposes `redis-exporter:9121` (multi-port services require **all ports named**).
+3. **Alloy** `prometheus.scrape "redis"` (static target `redis:9121`, 30s) → `prometheus.remote_write`
+   → LGTM Prometheus `http://lgtm:9090/api/v1/write` (receiver is enabled in the image's
+   `run-prometheus.sh`: `--web.enable-remote-write-receiver`).
+
+Query in Grafana → Explore → Prometheus: `redis_connected_clients`, `redis_memory_used_bytes`, `redis_up`,
+or import a Redis dashboard (grafana.com #763).
+
+Operational gotchas learned:
+
+- **Multi-port Service**: every port needs `name:` or the patch is rejected
+  (`spec.ports[0].name: Required value`) and ArgoCD keeps failing.
+- **ArgoCD stale revision**: `argocd app sync` right after a push can target a stale cached revision;
+  use `argocd app sync <app> --revision HEAD` and check `Sync Status: Synced to HEAD (...)`.
+- **Alloy k8s meta labels**: the namespace meta label is `__meta_kubernetes_namespace`
+  (there is no `__meta_kubernetes_pod_namespace`); pod/container are `__meta_kubernetes_pod_name`
+  / `__meta_kubernetes_pod_container_name`.
+- Alloy DaemonSet has no config hot-reload: `kubectl rollout restart ds/alloy` after configmap changes.
