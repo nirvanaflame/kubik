@@ -257,7 +257,7 @@ Docker Desktop's cluster too).
 ## 8. Istio routing (host-based)
 
 Routing layer: one `Gateway` + one `VirtualService` per app, in `k8s/base/istio/`.
-Hosts: `mock.local` → mock-server, `playground.local` → spring-playground.
+Hosts: `mock.local` → mock-server, `playground.local` → spring-playground, `grafana.local` → lgtm:3000 (Grafana).
 redis and lgtm carry `sidecar.istio.io/inject: "false"` (pure infra, no mesh needed).
 
 ### Install (one-time, needs istioctl)
