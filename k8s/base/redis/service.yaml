@@ -8,3 +8,6 @@ spec:
   ports:
     - port: 6379
       targetPort: 6379
+    - name: redis-exporter
+      port: 9121
+      targetPort: 9121

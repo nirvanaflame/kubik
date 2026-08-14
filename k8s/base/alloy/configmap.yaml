@@ -43,3 +43,20 @@ data:
         url = "http://lgtm:3100/loki/api/v1/push"
       }
     }
+
+    // --- Metrics ---
+
+    // Scrape Redis metrics from the exporter sidecar (redis:9121) and
+    // remote-write them into the LGTM stack's Prometheus (receiver enabled).
+    prometheus.scrape "redis" {
+      targets = [{"__address__" = "redis:9121"}]
+      job_name = "redis"
+      scrape_interval = "30s"
+      forward_to = [prometheus.remote_write.lgtm.receiver]
+    }
+
+    prometheus.remote_write "lgtm" {
+      endpoint {
+        url = "http://lgtm:9090/api/v1/write"
+      }
+    }
