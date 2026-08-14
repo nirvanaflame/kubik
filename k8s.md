@@ -431,3 +431,41 @@ kubectl port-forward -n argocd svc/argocd-server 8090:443
   (`argocd repo list`).
 - ArgoCD version 3.5.1 matches the installed server; keep CLI and server in sync
   (`argocd version`).
+
+---
+
+## 11. Cluster-wide logs in Grafana (Alloy → Loki)
+
+Every container log in the cluster (kube-system, istio, argocd, apps) lands in Loki
+inside the lgtm stack.
+
+**How it works:** a `grafana/alloy` DaemonSet (`k8s/base/alloy/`) runs on every node,
+discovers all pods via RBAC, tails their log files from `/var/log/pods`, maps
+`namespace`/`pod`/`container` labels (`discovery.relabel` — without this the labels
+are dropped at push), and forwards to `lgtm:3100/loki/api/v1/push`. Loki's port 3100
+was added to the lgtm deployment + service.
+
+Istio access logs (per-request envoy lines) are enabled separately (manual, not in
+git — istio config is outside the ArgoCD app's scope):
+
+```bash
+istioctl install --set profile=default --set meshConfig.accessLogFile=/dev/stdout -y
+# then restart the mesh workloads once so sidecars pick up the new bootstrap:
+kubectl -n spring-playground rollout restart deploy spring-playground mock-server
+kubectl -n istio-system rollout restart deploy istio-ingressgateway
+```
+
+**Viewing:** Grafana → **Explore** → datasource **Loki** (preconfigured in LGTM) →
+label browser:
+
+| What | Query |
+|---|---|
+| istio sidecar/access logs | `{container="istio-proxy"}` |
+| argocd | `{namespace="argocd"}` |
+| apps | `{namespace="spring-playground"}` |
+| everything | `{namespace=~".+"}` |
+
+**Troubleshooting:**
+- `pods/log is forbidden` → Alloy's ClusterRole needs `pods/log` get (it has it now).
+- Logs arrive but no labels → the `discovery.relabel` block is missing from the config.
+- Config changes need a DaemonSet restart (`kubectl -n spring-playground rollout restart daemonset/alloy`) — Alloy doesn't hot-reload.
