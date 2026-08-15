@@ -1,0 +1,99 @@
+# ---------------------------------------------------------------------------
+# .github/workflows/release.yml
+#
+# Replaces the manual `tools/release.sh` with proper CI/CD that executes on a
+# SELF-HOSTED runner inside the local kind cluster (labels: self-hosted, k8s).
+#
+# Flow (same GitOps contract as the old script):
+#   1. validate module + semver version
+#   2. docker build <module>:<version>  (repo-root context)
+#   3. push that image to the in-cluster registry (registry.ci.svc:5000)
+#   4. surgical kustomize edit: set images[].newName -> registry path AND
+#      images[].newTag -> <version> for the module (atomic 2-line-ish diff)
+#   5. commit + push to master  -> Argo CD (watching HEAD) rolls it out
+#
+# Concurrency cap is enforced by the ARC scale set (maxRunners: 25) that these
+# runner pods belong to; no per-job limit needed here on top.
+# ---------------------------------------------------------------------------
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: Module to build and deploy
+        required: true
+        type: choice
+        default: spring-playground
+        options:
+          - spring-playground
+          - mock-server
+      version:
+        description: Semver image tag, e.g. 0.0.3
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, k8s]
+    env:
+      MODULE: ${{ inputs.module }}
+      VERSION: ${{ inputs.version }}
+      REGISTRY: registry.ci.svc:5000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Validate inputs
+        run: |
+          set -euo pipefail
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$VERSION' is not a valid semver tag (e.g. 0.0.3)"; exit 1
+          fi
+          case "$MODULE" in spring-playground|mock-server) ;; *)
+            echo "::error::unknown module '$MODULE'"; exit 1;; esac
+          [[ -f "$MODULE/Dockerfile" ]] || { echo "::error::no $MODULE/Dockerfile"; exit 1; }
+          echo "Releasing $MODULE@$VERSION on a self-hosted in-cluster runner."
+
+      - name: Build image
+        run: docker build -t "$MODULE:$VERSION" -f "$MODULE/Dockerfile" .
+
+      - name: Push to in-cluster registry
+        run: |
+          docker tag "$MODULE:$VERSION" "$REGISTRY/$MODULE:$VERSION"
+          docker push "$REGISTRY/$MODULE:$VERSION"
+
+      - name: Point kustomize at registry + bump tag
+        run: |
+          awk -v mod="$MODULE" -v ver="$VERSION" -v reg="$REGISTRY/$MODULE" '
+            $0 ~ "^  - name: " mod { f=1; hasName=0 }
+            f && /^    newName:/ { sub(/newName: .*/, "newName: " reg); hasName=1 }
+            f && /^    newTag:/  {
+              if (!hasName) print "    newName: " reg
+              sub(/newTag: .*/, "newTag: " ver)
+              f=0
+            }
+            { print }
+          ' k8s/base/kustomization.yaml > kustomization.yaml.tmp
+          mv kustomization.yaml.tmp k8s/base/kustomization.yaml
+          # sanity: confirm the pin took
+          PINNED="$(awk '/name: '"$MODULE"'/{f=1} f&&/newTag:/{print $2; exit}' k8s/base/kustomization.yaml)"
+          [[ "$PINNED" == "$VERSION" ]] || { echo "::error::failed to pin $VERSION (got: $PINNED)"; exit 1; }
+          echo "Pinned $MODULE -> $REGISTRY/$MODULE:$VERSION"
+
+      - name: Commit + push (GitOps trigger for Argo CD)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/nirvanaflame/kubik.git"
+          git add k8s/base/kustomization.yaml
+          git commit -m "ci: release ${MODULE}@${VERSION}"
+          git push origin master
+          echo "Pushed. Argo CD will converge on HEAD; rollout verified via cluster."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

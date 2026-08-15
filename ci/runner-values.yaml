@@ -1,0 +1,95 @@
+# ---------------------------------------------------------------------------
+# ci/runner-values.yaml — helm values for the gha-runner-scale-set release
+# (`kubik-set`) that runs GitHub Actions self-hosted runners in-cluster.
+#
+# Notable settings:
+#   * maxRunners: 25  -> the hard cap on concurrent jobs (each runner pod = 1 job)
+#   * containerMode.type: "" (default mode) -> the pod spec below is used VERBATIM,
+#     so we control the docker:dind sidecar and pass --insecure-registry for the
+#     in-cluster HTTP registry (registry.ci.svc:5000).
+#   * Token is NOT here — it lives in the `kubik-github-secret` k8s Secret.
+# ---------------------------------------------------------------------------
+githubConfigUrl: "https://github.com/nirvanaflame/kubik"
+githubConfigSecret: kubik-github-secret
+
+# Labels a job must match via runs-on. Keep both the conventional "self-hosted"
+# and a project-specific "k8s" label.
+scaleSetLabels:
+  - self-hosted
+  - k8s
+
+minRunners: 0
+maxRunners: 25
+
+# Default (no containerMode) => template is used verbatim. We replicate ARC's
+# standard DinD wiring but add --insecure-registry for the local registry.
+containerMode:
+  type: ""
+
+controllerServiceAccount:
+  namespace: arc-systems
+  name: arc-gha-rs-controller
+
+template:
+  spec:
+    initContainers:
+      - name: init-dind-externals
+        image: ghcr.io/actions/actions-runner:latest
+        command: ["cp"]
+        args: ["-r", "/home/runner/externals/.", "/home/runner/tmpDir/"]
+        volumeMounts:
+          - name: dind-externals
+            mountPath: /home/runner/tmpDir
+
+    containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:latest
+        env:
+          - name: DOCKER_HOST
+            value: unix:///var/run/docker.sock
+          - name: DOCKER_TLS_VERIFY
+            value: "0"
+          - name: RUNNER_WAIT_FOR_DOCKER_IN_SECONDS
+            value: "120"
+        volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
+          - name: dind-sock
+            mountPath: /var/run
+          - name: dind-externals
+            mountPath: /home/runner/externals
+
+      - name: dind
+        image: docker:dind
+        args:
+          - dockerd
+          - --host=unix:///var/run/docker.sock
+          - --group=$(DOCKER_GROUP_GID)
+          - --insecure-registry=registry.ci.svc:5000
+        env:
+          - name: DOCKER_GROUP_GID
+            value: "123"
+        securityContext:
+          privileged: true
+        restartPolicy: Always
+        startupProbe:
+          exec:
+            command: ["docker", "info"]
+          initialDelaySeconds: 0
+          failureThreshold: 24
+          periodSeconds: 5
+        volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
+          - name: dind-sock
+            mountPath: /var/run
+          - name: dind-externals
+            mountPath: /home/runner/externals
+
+    volumes:
+      - name: work
+        emptyDir: {}
+      - name: dind-sock
+        emptyDir: {}
+      - name: dind-externals
+        emptyDir: {}
