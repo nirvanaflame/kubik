@@ -1,0 +1,9 @@
+name: diag-selfhosted
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: [self-hosted]
+    steps:
+      - name: Say hi
+        run: echo "I ran on $RUNNER_NAME ($RUNNER_OS/$RUNNER_ARCH)"
