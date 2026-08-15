@@ -18,7 +18,7 @@ scaleSetLabels:
   - self-hosted
   - k8s
 
-minRunners: 0
+minRunners: 1
 maxRunners: 25
 
 # Default (no containerMode) => template is used verbatim. We replicate ARC's
@@ -44,11 +44,13 @@ template:
     containers:
       - name: runner
         image: ghcr.io/actions/actions-runner:latest
+        # ARC injects ACTIONS_RUNNER_INPUT_JITCONFIG into this "runner" container;
+        # the image has NO entrypoint (CMD=/bin/bash), so we must start the runner
+        # explicitly or the container just runs bash and exits 0.
+        command: ["/home/runner/run.sh"]
         env:
           - name: DOCKER_HOST
             value: unix:///var/run/docker.sock
-          - name: DOCKER_TLS_VERIFY
-            value: "0"
           - name: RUNNER_WAIT_FOR_DOCKER_IN_SECONDS
             value: "120"
         volumeMounts:
