@@ -6,10 +6,16 @@
          Logs intentionally do NOT go over OTLP anymore; only traces do. -->
     <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <!-- v8 removed `additionalFields`; `customFields` injects a raw JSON
-                 object into every event. ${serviceName} is resolved by logback
-                 from the <springProperty> above (application.yaml service.name). -->
-            <customFields>{"service.name":"${serviceName}"}</customFields>
+            <!-- service.name -> service_name (matches Loki's normalized index label).
+                 traceId/spanId (micrometer MDC keys) -> trace_id/span_id so Tempo's
+                 "goto logs" trace_id filter matches. -->
+            <customFields>{"service_name":"${serviceName}"}</customFields>
+            <provider class="net.logstash.logback.composite.loggingevent.MdcJsonProvider">
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>spanId</includeMdcKeyName>
+                <mdcKeyFieldName>traceId=trace_id</mdcKeyFieldName>
+                <mdcKeyFieldName>spanId=span_id</mdcKeyFieldName>
+            </provider>
         </encoder>
     </appender>
 
