@@ -1,22 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <include resource="org/springframework/boot/logging/logback/base.xml"/>
-
     <springProperty name="serviceName" source="service.name" defaultValue="unknown"/>
 
-    <!-- JSON to console -->
+    <!-- JSON to console (single-line per event, tailed by Alloy into Loki).
+         Logs intentionally do NOT go over OTLP anymore; only traces do. -->
     <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <additionalFields>
-                <field>service.name</field>
-                <value>${serviceName}</value>
-            </additionalFields>
+            <!-- v8 removed `additionalFields`; `customFields` injects a raw JSON
+                 object into every event. ${serviceName} is resolved by logback
+                 from the <springProperty> above (application.yaml service.name). -->
+            <customFields>{"service.name":"${serviceName}"}</customFields>
         </encoder>
-
     </appender>
-
-    <!-- Logs no longer go over OTLP from the app: Alloy tails pod JSON logs
-         from /var/log/pods into Loki. Keep only the JSON console appender. -->
 
     <root level="INFO">
         <appender-ref ref="JSON"/>
