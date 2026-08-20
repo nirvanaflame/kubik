@@ -46,7 +46,7 @@ jobs:
   deploy:
     runs-on: [self-hosted, k8s]
     env:
-      MODULE: ${{ inputs.module }}
+      MODULE: ${{ inputs.module || 'spring-playground' }}
       VERSION: ${{ inputs.version }}
       REGISTRY: registry.ci.svc:5000
     steps:
@@ -73,6 +73,9 @@ jobs:
           set -euo pipefail
           if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::'$VERSION' is not a valid semver tag (e.g. 0.0.3)"; exit 1
+          fi
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ -z "$MODULE" ]; then
+            MODULE="spring-playground"
           fi
           case "$MODULE" in spring-playground|mock-server) ;; *)
             echo "::error::unknown module '$MODULE'"; exit 1;; esac
