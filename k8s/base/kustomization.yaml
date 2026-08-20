@@ -21,7 +21,7 @@ resources:
 images:
   - name: spring-playground
     newName: registry.ci.svc:5000/spring-playground
-    newTag: 0.0.2
+    newTag: 0.0.3
   - name: mock-server
     newTag: 0.0.1
 
