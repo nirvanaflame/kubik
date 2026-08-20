@@ -2,22 +2,23 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/base.xml"/>
 
+    <springProperty name="serviceName" source="service.name" defaultValue="unknown"/>
+
     <!-- JSON to console -->
     <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <additionalFields>
+                <field>service.name</field>
+                <value>${serviceName}</value>
+            </additionalFields>
+        </encoder>
+
     </appender>
 
-    <appender name="OTEL"
-              class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
-        <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
-        <captureLogstashStructuredArguments>true</captureLogstashStructuredArguments>
-        <captureLogstashMarkerAttributes>true</captureLogstashMarkerAttributes>
-        <captureMarkerAttribute>true</captureMarkerAttribute>
-    </appender>
+    <!-- Logs no longer go over OTLP from the app: Alloy tails pod JSON logs
+         from /var/log/pods into Loki. Keep only the JSON console appender. -->
 
     <root level="INFO">
-<!--        <appender-ref ref="CONSOLE"/>-->
         <appender-ref ref="JSON"/>
-        <appender-ref ref="OTEL"/>
     </root>
 </configuration>

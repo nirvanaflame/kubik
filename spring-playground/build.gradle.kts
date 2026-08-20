@@ -37,6 +37,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
     implementation("io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:2.28.1-alpha")
     implementation("net.logstash.logback:logstash-logback-encoder:8.0")
+    // Serve /actuator/prometheus for Alloy to scrape into Grafana Prometheus.
+    implementation("io.micrometer:micrometer-registry-prometheus")
 
     // --- Web ---
     implementation("org.springframework.boot:spring-boot-starter-data-redis")

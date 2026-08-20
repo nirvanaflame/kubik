@@ -1,3 +1,6 @@
+service:
+  name: spring-playground
+
 spring:
   application:
     name: spring-playground
@@ -10,19 +13,17 @@ management:
   tracing:
     sampling:
       probability: 1.0  # 100% for development
-  otlp:
-    metrics:
-      export:
-        url: http://localhost:4318/v1/metrics
+  # Metrics no longer go over OTLP from the app: Alloy scrapes them from
+  # /actuator/prometheus into Prometheus instead. Expose the endpoint.
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
   opentelemetry:
     tracing:
       export:
         otlp:
           endpoint: http://localhost:4318/v1/traces
-    logging:
-      export:
-        otlp:
-          endpoint: http://localhost:4318/v1/logs
 
 logging:
   level:

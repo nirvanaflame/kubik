@@ -1,3 +1,6 @@
+service:
+  name: mock-server
+
 spring:
   application:
     name: mock-server
