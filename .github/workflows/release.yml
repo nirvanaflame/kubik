@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 # .github/workflows/release.yml
 #
-# Replaces the manual `tools/release.sh` with proper CI/CD that executes on a
+# Replaces the manual `tools/release.sh` with proper CI/CD that runs on a
 # SELF-HOSTED runner inside the local kind cluster (labels: self-hosted, k8s).
 #
 # Flow (same GitOps contract as the old script):
@@ -13,7 +13,7 @@
 #   5. commit + push to master  -> Argo CD (watching HEAD) rolls it out
 #
 # Concurrency cap is enforced by the ARC scale set (maxRunners: 25) that these
-# runner pods belong to; no per-job limit needed here on top.
+# runner pods belong to; no per-job limit needed here.
 # ---------------------------------------------------------------------------
 name: release
 
@@ -32,6 +32,12 @@ on:
         description: Semver image tag, e.g. 0.0.3
         required: true
         type: string
+  push:
+    branches: [ master ]
+    paths:
+      - 'spring-playground/**'
+      - 'mock-server/**'
+      - '.github/workflows/release.yml'
 
 permissions:
   contents: write
@@ -48,6 +54,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: master
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            V="$VERSION"
+          else
+            CUR=$(awk '/^  - name: spring-playground/{f=1} f&&/^    newTag:/{print $2; exit}' k8s/base/kustomization.yaml)
+            MAJ=${CUR%%.*}; REST=${CUR#*.}; MIN=${REST%%.*}; PAT=${REST#*.}
+            V="$MAJ.$MIN.$((PAT+1))"
+          fi
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+          echo "Using version $V"
 
       - name: Validate inputs
         run: |
@@ -68,7 +87,7 @@ jobs:
           docker tag "$MODULE:$VERSION" "$REGISTRY/$MODULE:$VERSION"
           docker push "$REGISTRY/$MODULE:$VERSION"
 
-      - name: Point kustomize at registry + bump tag
+      - name: Pin kustomize at registry + bump tag
         run: |
           awk -v mod="$MODULE" -v ver="$VERSION" -v reg="$REGISTRY/$MODULE" '
             $0 ~ "^  - name: " mod { f=1; hasName=0 }
