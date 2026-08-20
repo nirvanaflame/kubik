@@ -92,7 +92,10 @@ jobs:
 
       - name: Pin kustomize at registry + bump tag
         run: |
-          awk -v mod="$MODULE" -v ver="$VERSION" -v reg="$REGISTRY/$MODULE" '
+          # Docker Desktop's built-in k8s shares the local Docker image store and
+          # cannot resolve registry.ci.svc (DNS), so pin the BARE module name with
+          # IfNotPresent instead of a registry prefix.
+          awk -v mod="$MODULE" -v ver="$VERSION" -v reg="$MODULE" '
             $0 ~ "^  - name: " mod { f=1; hasName=0 }
             f && /^    newName:/ { sub(/newName: .*/, "newName: " reg); hasName=1 }
             f && /^    newTag:/  {
@@ -106,7 +109,7 @@ jobs:
           # sanity: confirm the pin took
           PINNED="$(awk '/name: '"$MODULE"'/{f=1} f&&/newTag:/{print $2; exit}' k8s/base/kustomization.yaml)"
           [[ "$PINNED" == "$VERSION" ]] || { echo "::error::failed to pin $VERSION (got: $PINNED)"; exit 1; }
-          echo "Pinned $MODULE -> $REGISTRY/$MODULE:$VERSION"
+          echo "Pinned $MODULE -> $MODULE:$VERSION (bare local image for Docker Desktop k8s)"
 
       - name: Commit + push (GitOps trigger for Argo CD)
         run: |
