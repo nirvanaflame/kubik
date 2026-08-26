@@ -19,7 +19,15 @@ management:
     web:
       exposure:
         include: health,info,metrics,prometheus
+  oltp:
+    metrics:
+      export:
+        enabled: false
   opentelemetry:
+    logging:
+      export:
+        oltp:
+          enabled: false
     tracing:
       export:
         otlp:
@@ -28,8 +36,4 @@ management:
 logging:
   level:
     root: info
-    io.opentelemetry: DEBUG
-    io.opentelemetry.exporter: DEBUG
-    io.opentelemetry.exporter.otlp: DEBUG
-    io.opentelemetry.sdk.logs: DEBUG
-    io.opentelemetry.sdk.logs.export: DEBUG
+    io.opentelemetry: warn
