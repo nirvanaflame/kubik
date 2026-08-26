@@ -21,7 +21,7 @@ resources:
 images:
   - name: spring-playground
     newName: host.docker.internal:5000/spring-playground
-    newTag: 0.0.10
+    newTag: 0.0.11
   - name: mock-server
     newName: host.docker.internal:5000/mock-server
     newTag: 0.0.1
