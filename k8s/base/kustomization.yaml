@@ -21,7 +21,7 @@ resources:
 images:
   - name: spring-playground
     newName: spring-playground
-    newTag: 0.0.6
+    newTag: 0.0.7
   - name: mock-server
     newTag: 0.0.1
 
