@@ -49,9 +49,11 @@ data:
     // Scrape the app's own Prometheus endpoint and remote-write it into the
     // LGTM stack's Prometheus (receiver enabled). Replaces push-from-app OTLP metrics.
     prometheus.scrape "spring_playground" {
-      targets = [{"__address__" = "spring-playground:80"}]
-      path = "/actuator/prometheus"
-      job_name = "spring-playground"
+      targets = [{
+        "__address__"     = "spring-playground:80",
+        "__metrics_path__" = "/actuator/prometheus",
+      }]
+      job = "spring-playground"
       scrape_interval = "30s"
       forward_to = [prometheus.remote_write.lgtm.receiver]
     }
@@ -60,7 +62,7 @@ data:
     // remote-write them into the LGTM stack's Prometheus (receiver enabled).
     prometheus.scrape "redis" {
       targets = [{"__address__" = "redis:9121"}]
-      job_name = "redis"
+      job = "redis"
       scrape_interval = "30s"
       forward_to = [prometheus.remote_write.lgtm.receiver]
     }
