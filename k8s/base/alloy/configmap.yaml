@@ -48,7 +48,7 @@ data:
 
     // Scrape the app's own Prometheus endpoint and remote-write it into the
     // LGTM stack's Prometheus (receiver enabled). Replaces push-from-app OTLP metrics.
-    prometheus.scrape "spring-playground" {
+    prometheus.scrape "spring_playground" {
       targets = [{"__address__" = "spring-playground:80"}]
       path = "/actuator/prometheus"
       job_name = "spring-playground"
