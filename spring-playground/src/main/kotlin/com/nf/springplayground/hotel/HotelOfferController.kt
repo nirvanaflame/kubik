@@ -67,7 +67,7 @@ class HotelOfferController(
             log.atInfo()
                 .addKeyValue("event", "hotel_offer_selection")
                 .addKeyValue("operation", "cache_hit")
-                .addKeyValue("requestId", requestId)
+                .addKeyValue("request_id", requestId)
                 .log("Returning cached best offer from Redis key={}", OFFER_CACHE_KEY)
             // Inject a fresh requestId into the cached response
             return result + ("requestId" to requestId)

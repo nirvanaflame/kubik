@@ -258,6 +258,23 @@ Docker Desktop's cluster too).
    **Settings → Docker Engine → insecure-registries** (it's plain HTTP), otherwise
    pulls fail with `http: server gave HTTP response to HTTPS client`. Start the
    registry once with `docker compose up -d registry`.
+8. **containerd registry mirror (CRITICAL node fix)** — the Docker Desktop node's
+   containerd has `/etc/containerd/certs.d/_default/hosts.toml` that routes EVERY
+   registry pull (even `host.docker.internal:5000`) through a broken mirror
+   `http://registry-mirror:1273` (returns 500). To let the kubelet pull straight
+   from the host registry, create per-registry certs.d override on the node:
+   ```bash
+   # /etc/containerd/certs.d/host.docker.internal:5000/hosts.toml
+   server = "http://host.docker.internal:5000"
+   [host."http://host.docker.internal:5000"]
+     capabilities = ["pull", "resolve"]
+     skip_verify = true
+   ```
+   then `systemctl restart containerd` (use a privileged/hostPID pod to write it;
+   see `tools` or apply via `kubectl debug node/desktop-worker`). This is NOT in
+   git — if Docker Desktop rebuilds/resets the VM you must re-apply it.
+   Symptom if missing: `failed to resolve reference ... registry-mirror:1273 ...
+   500 Internal Server Error` in pod events.
 
 ---
 
