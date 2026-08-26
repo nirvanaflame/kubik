@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
         - name: spring-playground
-          image: spring-playground        # tag pinned by kustomize `images` (registry.ci.svc)
-          imagePullPolicy: IfNotPresent   # image served by in-cluster registry
+          image: spring-playground        # tag pinned by kustomize `images`
+          imagePullPolicy: IfNotPresent   # pulled from host registry (k8s.md)
           ports:
             - containerPort: 8080
           envFrom:

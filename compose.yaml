@@ -1,4 +1,14 @@
 services:
+  # Local container registry on the Docker Desktop host. The in-cluster build
+  # runner pushes images here (host.docker.internal:5000) and the kubelet pulls
+  # from the same hostname (listed in Docker Desktop insecure-registries).
+  registry:
+    container_name: registry
+    image: 'registry:2'
+    ports:
+      - '5000:5000'
+    volumes:
+      - registry-data:/var/lib/registry
   grafana-lgtm:
     container_name: lgtm
     image: 'grafana/otel-lgtm:latest'
@@ -23,3 +33,6 @@ services:
       - '8081:8081'
     environment:
       SERVER_PORT: 8081
+
+volumes:
+  registry-data:

@@ -20,10 +20,10 @@ resources:
 
 images:
   - name: spring-playground
-    newName: registry.ci.svc:5000/spring-playground
+    newName: host.docker.internal:5000/spring-playground
     newTag: 0.0.9
   - name: mock-server
-    newName: registry.ci.svc:5000/mock-server
+    newName: host.docker.internal:5000/mock-server
     newTag: 0.0.1
 
 labels:

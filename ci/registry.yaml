@@ -1,8 +1,12 @@
 # ---------------------------------------------------------------------------
-# ci/registry.yaml — in-cluster container registry that the self-hosted
-# GitHub Actions runner (DinD) pushes to and Argo CD / the app deployments
-# pull from. Replaces the previous "local Docker Desktop image store" hack
-# with a standard, self-contained registry. Dev-only (HTTP, no auth).
+# ci/registry.yaml — NOT the image registry used by deployments. It is kept
+# here only as a reference for an earlier in-cluster experiment.
+#
+# A ClusterIP registry is UNREACHABLE by the kubelet (which does its own DNS
+# resolution and cannot see coreDNS-only service names), so deployments cannot
+# pull from it. The working registry for this repo runs on the Docker Desktop
+# HOST (see compose.yaml -> registry, host.docker.internal:5000) and must be in
+# Docker Desktop's insecure-registries.
 # ---------------------------------------------------------------------------
 apiVersion: v1
 kind: Namespace

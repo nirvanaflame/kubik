@@ -251,6 +251,13 @@ Docker Desktop's cluster too).
    images; a kind CLI cluster does not (needs `kind load docker-image`).
 6. `.dockerignore` already excludes `**/build` and `.gradle`, so contexts stay clean —
    both Dockerfiles must be built from repo **root**.
+7. **Local registry + insecure-registries (required for CI releases)** — the build
+   runner runs in-cluster and pushes to a registry on the Docker Desktop host
+   (`host.docker.internal:5000`, from `compose.yaml`). The kubelet pulls from that
+   same hostname, so Docker Desktop must list `host.docker.internal:5000` under
+   **Settings → Docker Engine → insecure-registries** (it's plain HTTP), otherwise
+   pulls fail with `http: server gave HTTP response to HTTPS client`. Start the
+   registry once with `docker compose up -d registry`.
 
 ---
 

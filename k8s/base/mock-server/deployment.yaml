@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
         - name: mock-server
-          image: mock-server            # tag pinned by kustomize `images` (registry.ci.svc)
-          imagePullPolicy: IfNotPresent   # image served by in-cluster registry
+          image: mock-server            # tag pinned by kustomize `images`
+          imagePullPolicy: IfNotPresent   # pulled from host registry
           ports:
             - containerPort: 8081
           livenessProbe:

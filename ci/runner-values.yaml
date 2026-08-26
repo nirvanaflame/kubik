@@ -6,7 +6,7 @@
 #   * maxRunners: 25  -> the hard cap on concurrent jobs (each runner pod = 1 job)
 #   * containerMode.type: "" (default mode) -> the pod spec below is used VERBATIM,
 #     so we control the docker:dind sidecar and pass --insecure-registry for the
-#     in-cluster HTTP registry (registry.ci.svc:5000).
+#     HOST registry (host.docker.internal:5000) it pushes images to.
 #   * Token is NOT here — it lives in the `kubik-github-secret` k8s Secret.
 # ---------------------------------------------------------------------------
 githubConfigUrl: "https://github.com/nirvanaflame/kubik"
@@ -22,7 +22,7 @@ minRunners: 1
 maxRunners: 25
 
 # Default (no containerMode) => template is used verbatim. We replicate ARC's
-# standard DinD wiring but add --insecure-registry for the local registry.
+# standard DinD wiring but add --insecure-registry for the host registry.
 containerMode:
   type: ""
 
@@ -67,7 +67,7 @@ template:
           - dockerd
           - --host=unix:///var/run/docker.sock
           - --group=$(DOCKER_GROUP_GID)
-          - --insecure-registry=registry.ci.svc:5000
+          - --insecure-registry=host.docker.internal:5000
         env:
           - name: DOCKER_GROUP_GID
             value: "123"
