@@ -52,8 +52,8 @@ data:
       targets = [{
         "__address__"     = "spring-playground:80",
         "__metrics_path__" = "/actuator/prometheus",
+        "__metrics_job__"  = "spring-playground",
       }]
-      job = "spring-playground"
       scrape_interval = "30s"
       forward_to = [prometheus.remote_write.lgtm.receiver]
     }
@@ -61,8 +61,10 @@ data:
     // Scrape Redis metrics from the exporter sidecar (redis:9121) and
     // remote-write them into the LGTM stack's Prometheus (receiver enabled).
     prometheus.scrape "redis" {
-      targets = [{"__address__" = "redis:9121"}]
-      job = "redis"
+      targets = [{
+        "__address__"    = "redis:9121",
+        "__metrics_job__" = "redis",
+      }]
       scrape_interval = "30s"
       forward_to = [prometheus.remote_write.lgtm.receiver]
     }
