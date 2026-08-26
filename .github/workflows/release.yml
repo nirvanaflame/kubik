@@ -12,8 +12,15 @@
 #      images[].newTag -> <version> for the module (atomic 2-line-ish diff)
 #   5. commit + push to master  -> Argo CD (watching HEAD) rolls it out
 #
-# Concurrency cap is enforced by the ARC scale set (maxRunners: 25) that these
-# runner pods belong to; no per-job limit needed here.
+# Triggers:
+#   - pushes to master (on ANY commit/path), so every change that lands on
+#     master is automatically built + deployed.
+#   - manual workflow_dispatch, where `version` is OPTIONAL: if omitted, the
+#     current newTag in kustomization.yaml is auto-incremented (X.Y.Z -> X.Y.Z+1).
+#
+# The pipeline commits a `ci: release <module>@<version>` kustomization change
+# back to master. Those self-triggered commits are skipped at the JOB level so
+# the workflow never recursively re-runs and bumps the version forever.
 # ---------------------------------------------------------------------------
 name: release
 
@@ -29,15 +36,11 @@ on:
           - spring-playground
           - mock-server
       version:
-        description: Semver image tag, e.g. 0.0.3
-        required: true
+        description: Semver image tag, e.g. 0.0.3 (leave empty to auto-increment)
+        required: false
         type: string
   push:
     branches: [ master ]
-    paths:
-      - 'spring-playground/**'
-      - 'mock-server/**'
-      - '.github/workflows/release.yml'
 
 permissions:
   contents: write
@@ -45,6 +48,11 @@ permissions:
 jobs:
   deploy:
     runs-on: [self-hosted, k8s]
+    # Skip the pipeline's own "ci: release ..." commit so it doesn't retrigger
+    # an endless bump loop. Every other push to master runs the release.
+    if: >-
+      github.event_name != 'push' ||
+      !startsWith(github.event.head_commit.message, 'ci: release ')
     env:
       MODULE: ${{ inputs.module || 'spring-playground' }}
       VERSION: ${{ inputs.version }}
@@ -58,12 +66,17 @@ jobs:
       - name: Resolve version
         id: ver
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            V="$VERSION"
-          else
-            CUR=$(awk '/^  - name: spring-playground/{f=1} f&&/^    newTag:/{print $2; exit}' k8s/base/kustomization.yaml)
+          if [ -z "$VERSION" ]; then
+            # No version supplied -> bump the one currently pinned in kustomization.yaml.
+            CUR=$(awk -v mod="$MODULE" '$0 ~ "^  - name: " mod {f=1} f && /^    newTag:/{print $2; exit}' k8s/base/kustomization.yaml)
+            if [ -z "$CUR" ]; then
+              echo "::error::no newTag found for module '$MODULE' in k8s/base/kustomization.yaml"; exit 1
+            fi
             MAJ=${CUR%%.*}; REST=${CUR#*.}; MIN=${REST%%.*}; PAT=${REST#*.}
             V="$MAJ.$MIN.$((PAT+1))"
+            echo "Auto-incremented $CUR -> $V"
+          else
+            V="$VERSION"
           fi
           echo "VERSION=$V" >> "$GITHUB_ENV"
           echo "Using version $V"
@@ -73,9 +86,6 @@ jobs:
           set -euo pipefail
           if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::'$VERSION' is not a valid semver tag (e.g. 0.0.3)"; exit 1
-          fi
-          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ -z "$MODULE" ]; then
-            MODULE="spring-playground"
           fi
           case "$MODULE" in spring-playground|mock-server) ;; *)
             echo "::error::unknown module '$MODULE'"; exit 1;; esac
