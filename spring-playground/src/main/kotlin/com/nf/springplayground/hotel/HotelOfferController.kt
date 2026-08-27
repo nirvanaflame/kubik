@@ -116,31 +116,31 @@ class HotelOfferController(
 
         // 4) Wide log payload (unchanged)
         val payload = mapOf(
-            "requestId" to requestId,
-            "hotelsConsidered" to hotels,
-            "offersByHotel" to offersByHotel,
-            "chosenOffer" to best,
+            "request_id" to requestId,
+            "hotels_considered" to hotels,
+            "offers_by_hotel" to offersByHotel,
+            "chosen_offer" to best,
             "stats" to mapOf(
-                "hotelCount" to hotels.size,
-                "offerCount" to allOffers.size,
-                "cheapestPrice" to best.price,
-                "avgPrice" to avg,
-                "savingsVsAvgPct" to savingsPct,
+                "hotel_count" to hotels.size,
+                "offer_count" to allOffers.size,
+                "cheapest_price" to best.price,
+                "avg_price" to avg,
+                "savings_vs_avg_pct" to savingsPct,
             ),
         )
 
         log.atInfo()
             .addKeyValue("event", "hotel_offer_selection")
             .addKeyValue("operation", "choose_best_offer")
-            .addKeyValue("requestId", requestId)
-            .addKeyValue("hotelCount", hotels.size)
-            .addKeyValue("offerCount", allOffers.size)
-            .addKeyValue("chosenHotelId", best.hotelId)
-            .addKeyValue("chosenHotelName", best.hotelName)
-            .addKeyValue("chosenPrice", best.price)
+            .addKeyValue("request_id", requestId)
+            .addKeyValue("hotel_count", hotels.size)
+            .addKeyValue("offer_count", allOffers.size)
+            .addKeyValue("chosen_hotel_id", best.hotelId)
+            .addKeyValue("chosen_hotel_name", best.hotelName)
+            .addKeyValue("chosen_price", best.price)
             .addKeyValue("currency", best.currency)
-            .addKeyValue("avgPrice", avg)
-            .addKeyValue("savingsVsAvgPct", savingsPct)
+            .addKeyValue("avg_price", avg)
+            .addKeyValue("savings_vs_avg_pct", savingsPct)
             .addMarker(RawJsonAppendingMarker("comparison", objectMapper.writeValueAsString(payload)))
             .log("Chose best hotel offer (fresh)")
 
