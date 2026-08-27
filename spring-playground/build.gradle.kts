@@ -15,6 +15,9 @@ plugins {
     id("io.spring.dependency-management")
 }
 
+group = "com.nf.springplayground"
+version = "0.0.12"
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
